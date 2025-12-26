@@ -27,6 +27,7 @@ IMF Data Portal API를 활용하여 각국의 주요 경제 통계를 도표와 
 - **CSS3**: 스타일링 및 반응형 디자인
 - **JavaScript**: 데이터 처리 및 API 호출
 - **Chart.js**: 그래프 시각화 라이브러리
+- **Netlify Functions**: 서버리스 함수로 CORS 문제 해결
 - **IMF Data Portal API**: 경제 통계 데이터 소스
 
 ## 🌐 배포
@@ -63,11 +64,16 @@ git push -u origin main
    - **Publish directory**: `/` (또는 비워둠)
 5. "Deploy site"를 클릭합니다
 
+**중요**: 이 프로젝트는 Netlify Functions를 사용하여 CORS 문제를 해결합니다. 
+- `netlify/functions/imf-api.js` 파일이 서버 사이드에서 IMF API를 호출합니다
+- Netlify는 자동으로 Functions를 배포하고 `/api/imf-api` 엔드포인트로 접근할 수 있게 합니다
+- 추가 설정 없이 바로 작동합니다
+
 ## ⚠️ 주의사항
 
-- IMF API는 CORS(Cross-Origin Resource Sharing) 제한이 있을 수 있습니다
-- 실제 프로덕션 환경에서는 서버 사이드에서 API를 호출하거나 CORS 프록시를 설정해야 할 수 있습니다
-- 현재 버전은 개발/데모 목적으로 CORS 프록시 서비스를 사용합니다
+- **CORS 문제 해결**: Netlify Functions를 사용하여 서버 사이드에서 IMF API를 호출하므로 CORS 문제가 해결되었습니다
+- **Netlify Functions**: `netlify/functions/imf-api.js` 파일이 서버리스 함수로 작동합니다
+- **로컬 테스트**: 로컬에서 테스트하려면 Netlify CLI를 사용하거나 `netlify dev` 명령어를 실행하세요
 
 ## 📝 라이선스
 
@@ -78,4 +84,19 @@ git push -u origin main
 - [IMF Data Portal](https://www.imf.org/external/datamapper/)
 - [Chart.js 문서](https://www.chartjs.org/docs/)
 - [Netlify 문서](https://docs.netlify.com/)
+- [Netlify Functions 문서](https://docs.netlify.com/functions/overview/)
+
+## 🛠️ 로컬 개발
+
+로컬에서 Netlify Functions를 테스트하려면:
+
+```bash
+# Netlify CLI 설치
+npm install -g netlify-cli
+
+# 로컬 개발 서버 실행
+netlify dev
+```
+
+이렇게 하면 `http://localhost:8888`에서 사이트와 Functions를 함께 테스트할 수 있습니다.
 

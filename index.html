@@ -170,7 +170,7 @@
 
         <div class="info-box">
             <strong>사용 방법:</strong> 국가와 지표를 선택한 후 "데이터 불러오기" 버튼을 클릭하세요. 
-            IMF Data Portal API를 통해 최신 경제 통계 데이터를 가져옵니다.
+            Netlify Functions를 통해 IMF Data Portal API에서 최신 경제 통계 데이터를 가져옵니다.
         </div>
 
         <div class="controls">
@@ -249,26 +249,17 @@
             document.getElementById('loadData').disabled = true;
 
             try {
-                // IMF Data Portal API 엔드포인트
-                // 참고: 실제 API는 CORS 제한이 있을 수 있으므로, 프록시나 서버를 통해 접근해야 할 수 있습니다.
-                const apiUrl = `https://www.imf.org/external/datamapper/api/v1/${indicator}/${country}?periods=${startYear}-${endYear}`;
+                // Netlify Function을 통해 IMF API 호출 (CORS 문제 해결)
+                const functionUrl = `/api/imf-api?indicator=${encodeURIComponent(indicator)}&country=${encodeURIComponent(country)}&startYear=${encodeURIComponent(startYear)}&endYear=${encodeURIComponent(endYear)}`;
                 
-                // CORS 문제를 우회하기 위해 CORS 프록시 사용 (개발용)
-                const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(apiUrl)}`;
+                const response = await fetch(functionUrl);
                 
-                const response = await fetch(proxyUrl);
-                const data = await response.json();
-                
-                // 프록시 응답 파싱
-                let imfData;
-                try {
-                    const parsedContent = JSON.parse(data.contents);
-                    imfData = parsedContent;
-                } catch (e) {
-                    // 직접 접근 시도
-                    const directResponse = await fetch(apiUrl);
-                    imfData = await directResponse.json();
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
                 }
+                
+                const imfData = await response.json();
 
                 // 데이터 처리
                 processData(imfData, country, indicator);
@@ -287,22 +278,44 @@
 
         function processData(data, country, indicator) {
             try {
-                // IMF API 응답 구조에 따라 데이터 추출
-                const values = data.values || data[country] || {};
-                const periods = data.periods || [];
+                // IMF API 응답 구조 파싱
+                // IMF API는 보통 {values: {country: {year: value}}} 형태로 반환
+                let values = {};
+                
+                // 다양한 응답 구조 처리
+                if (data.values && data.values[country]) {
+                    values = data.values[country];
+                } else if (data[country]) {
+                    values = data[country];
+                } else if (data.values) {
+                    // values가 직접 연도별 데이터인 경우
+                    values = data.values;
+                } else if (Array.isArray(data)) {
+                    // 배열 형태인 경우
+                    const dataObj = {};
+                    data.forEach(item => {
+                        if (item.period && item.value !== undefined) {
+                            dataObj[item.period] = item.value;
+                        }
+                    });
+                    values = dataObj;
+                }
                 
                 const labels = [];
                 const chartData = [];
+                const startYear = parseInt(document.getElementById('startYear').value);
+                const endYear = parseInt(document.getElementById('endYear').value);
 
                 // 연도별 데이터 추출
-                for (let year = parseInt(document.getElementById('startYear').value); 
-                     year <= parseInt(document.getElementById('endYear').value); 
-                     year++) {
+                for (let year = startYear; year <= endYear; year++) {
                     labels.push(year.toString());
                     
                     // 데이터가 있는 경우 해당 값 사용, 없으면 null
-                    const value = values[year] || values[year.toString()] || null;
-                    chartData.push(value);
+                    const value = values[year] || values[year.toString()] || 
+                                 (values[`${year}-01-01`] !== undefined ? values[`${year}-01-01`] : null);
+                    
+                    // 숫자로 변환 (문자열인 경우)
+                    chartData.push(value !== null ? parseFloat(value) : null);
                 }
 
                 // 차트 업데이트
@@ -310,7 +323,8 @@
                 
             } catch (error) {
                 console.error('데이터 처리 오류:', error);
-                showError('데이터를 처리하는 중 오류가 발생했습니다.');
+                console.error('받은 데이터:', data);
+                showError('데이터를 처리하는 중 오류가 발생했습니다. 응답 구조를 확인하세요.');
                 showSampleData(country, indicator, 
                     document.getElementById('startYear').value, 
                     document.getElementById('endYear').value);
@@ -330,7 +344,7 @@
 
             updateCharts(labels, chartData, getIndicatorName(indicator), country);
             
-            showError('⚠️ 실제 IMF API에 접근할 수 없어 샘플 데이터를 표시합니다. 실제 배포 시에는 서버 사이드에서 API를 호출하거나 CORS 프록시를 설정해야 합니다.');
+            showError('⚠️ IMF API에서 데이터를 가져올 수 없어 샘플 데이터를 표시합니다. Netlify Function이 제대로 배포되었는지 확인하세요.');
         }
 
         function updateCharts(labels, data, indicatorName, country) {
