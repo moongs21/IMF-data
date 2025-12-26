@@ -67,7 +67,9 @@ exports.handler = async (event, context) => {
                 'KR': 'KOR',
                 'IN': 'IND',
                 'BR': 'BRA',
-                'RU': 'RUS'
+                'RU': 'RUS',
+                'CZ': 'CZE',  // 체코
+                'SK': 'SVK'   // 슬로바키아
             };
 
             const wbIndicator = indicatorMap[indicator] || indicator;
