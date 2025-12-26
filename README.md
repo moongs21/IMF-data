@@ -1,6 +1,6 @@
-# IMF 경제 통계 대시보드
+# 세계 경제 통계 대시보드
 
-IMF Data Portal API를 활용하여 각국의 주요 경제 통계를 도표와 그래프로 시각화하는 웹 애플리케이션입니다.
+World Bank API를 활용하여 각국의 주요 경제 통계를 도표와 그래프로 시각화하는 웹 애플리케이션입니다.
 
 ## 🌟 주요 기능
 
@@ -28,7 +28,7 @@ IMF Data Portal API를 활용하여 각국의 주요 경제 통계를 도표와 
 - **JavaScript**: 데이터 처리 및 API 호출
 - **Chart.js**: 그래프 시각화 라이브러리
 - **Netlify Functions**: 서버리스 함수로 CORS 문제 해결
-- **IMF Data Portal API**: 경제 통계 데이터 소스
+- **World Bank API**: 경제 통계 데이터 소스 (무료 공개 API)
 
 ## 🌐 배포
 
@@ -65,14 +65,15 @@ git push -u origin main
 5. "Deploy site"를 클릭합니다
 
 **중요**: 이 프로젝트는 Netlify Functions를 사용하여 CORS 문제를 해결합니다. 
-- `netlify/functions/imf-api.js` 파일이 서버 사이드에서 IMF API를 호출합니다
-- Netlify는 자동으로 Functions를 배포하고 `/api/imf-api` 엔드포인트로 접근할 수 있게 합니다
-- 추가 설정 없이 바로 작동합니다
+- `netlify/functions/worldbank-api.js` 파일이 서버 사이드에서 World Bank API를 호출합니다
+- Netlify는 자동으로 Functions를 배포하고 `/.netlify/functions/worldbank-api` 엔드포인트로 접근할 수 있게 합니다
+- World Bank API는 무료 공개 API이므로 추가 인증 없이 바로 작동합니다
 
 ## ⚠️ 주의사항
 
-- **CORS 문제 해결**: Netlify Functions를 사용하여 서버 사이드에서 IMF API를 호출하므로 CORS 문제가 해결되었습니다
-- **Netlify Functions**: `netlify/functions/imf-api.js` 파일이 서버리스 함수로 작동합니다
+- **CORS 문제 해결**: Netlify Functions를 사용하여 서버 사이드에서 World Bank API를 호출하므로 CORS 문제가 해결되었습니다
+- **Netlify Functions**: `netlify/functions/worldbank-api.js` 파일이 서버리스 함수로 작동합니다
+- **World Bank API**: 무료 공개 API로 접근 제한이 없습니다
 - **로컬 테스트**: 로컬에서 테스트하려면 Netlify CLI를 사용하거나 `netlify dev` 명령어를 실행하세요
 
 ## 📝 라이선스
@@ -81,7 +82,7 @@ git push -u origin main
 
 ## 🔗 참고 자료
 
-- [IMF Data Portal](https://www.imf.org/external/datamapper/)
+- [World Bank API](https://datahelpdesk.worldbank.org/knowledgebase/articles/889392)
 - [Chart.js 문서](https://www.chartjs.org/docs/)
 - [Netlify 문서](https://docs.netlify.com/)
 - [Netlify Functions 문서](https://docs.netlify.com/functions/overview/)

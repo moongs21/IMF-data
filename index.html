@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IMF 경제 통계 대시보드</title>
+    <title>세계 경제 통계 대시보드 - World Bank API</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         * {
@@ -165,12 +165,12 @@
 </head>
 <body>
     <div class="container">
-        <h1>🌍 IMF 경제 통계 대시보드</h1>
-        <p class="subtitle">각국의 주요 경제 지표를 비교하고 시각화합니다</p>
+        <h1>🌍 세계 경제 통계 대시보드</h1>
+        <p class="subtitle">World Bank API를 활용한 각국의 주요 경제 지표 비교 및 시각화</p>
 
         <div class="info-box">
             <strong>사용 방법:</strong> 국가와 지표를 선택한 후 "데이터 불러오기" 버튼을 클릭하세요. 
-            Netlify Functions를 통해 IMF Data Portal API에서 최신 경제 통계 데이터를 가져옵니다.
+            World Bank API를 통해 최신 경제 통계 데이터를 가져옵니다. (무료 공개 API)
         </div>
 
         <div class="controls">
@@ -249,16 +249,15 @@
             document.getElementById('loadData').disabled = true;
 
             try {
-                // Netlify Function을 통해 IMF API 호출 (CORS 문제 해결)
+                // Netlify Function을 통해 World Bank API 호출 (무료 공개 API)
                 // Netlify Functions는 /.netlify/functions/ 경로로 접근합니다
-                // Node.js https 모듈 사용 (fetch 대신, 더 안정적)
-                const functionUrl = `/.netlify/functions/imf-api-alt?indicator=${encodeURIComponent(indicator)}&country=${encodeURIComponent(country)}&startYear=${encodeURIComponent(startYear)}&endYear=${encodeURIComponent(endYear)}`;
+                const functionUrl = `/.netlify/functions/worldbank-api?indicator=${encodeURIComponent(indicator)}&country=${encodeURIComponent(country)}&startYear=${encodeURIComponent(startYear)}&endYear=${encodeURIComponent(endYear)}`;
                 
                 console.log('Function URL:', functionUrl);
                 
-                // 타임아웃 설정 (65초 - 서버 타임아웃 60초보다 약간 길게)
+                // 타임아웃 설정 (35초 - 서버 타임아웃 30초보다 약간 길게)
                 const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 65000);
+                const timeoutId = setTimeout(() => controller.abort(), 35000);
                 
                 let response;
                 try {
@@ -269,7 +268,7 @@
                 } catch (fetchError) {
                     clearTimeout(timeoutId);
                     if (fetchError.name === 'AbortError') {
-                        throw new Error('요청 시간이 초과되었습니다 (65초). IMF API가 느리게 응답하고 있을 수 있습니다.');
+                        throw new Error('요청 시간이 초과되었습니다 (35초). World Bank API가 느리게 응답하고 있을 수 있습니다.');
                     }
                     throw new Error(`네트워크 오류: ${fetchError.message}. Netlify Functions가 제대로 배포되었는지 확인하세요.`);
                 }
@@ -355,24 +354,14 @@
             try {
                 console.log('데이터 파싱 시작:', data);
                 
-                // IMF API 응답 구조 파싱
-                // IMF API는 보통 {values: {indicator: {country: {year: value}}}} 형태로 반환
+                // World Bank API 응답 구조 파싱
+                // World Bank API는 {values: {year: value}} 형태로 변환되어 반환됨
                 let values = {};
                 
-                // IMF API의 실제 응답 구조에 맞춰 파싱
+                // World Bank API 응답 구조 처리
                 if (data.values) {
-                    // {values: {NGDP_RPCH: {US: {2020: 2.3, 2021: 5.7}}}}
-                    if (data.values[indicator]) {
-                        if (data.values[indicator][country]) {
-                            values = data.values[indicator][country];
-                        } else {
-                            // 국가 코드가 다른 경우 시도
-                            const countryUpper = country.toUpperCase();
-                            if (data.values[indicator][countryUpper]) {
-                                values = data.values[indicator][countryUpper];
-                            }
-                        }
-                    }
+                    // {values: {2020: 2.3, 2021: 5.7}}
+                    values = data.values;
                 } else if (data[country]) {
                     // 직접 국가 코드로 접근
                     values = data[country];
@@ -380,11 +369,11 @@
                     // {indicator: {country: {year: value}}}
                     values = data[indicator][country];
                 } else if (Array.isArray(data)) {
-                    // 배열 형태인 경우
+                    // 배열 형태인 경우 (World Bank 원본 형식일 수 있음)
                     const dataObj = {};
                     data.forEach(item => {
-                        if (item.period && item.value !== undefined) {
-                            const year = parseInt(item.period.split('-')[0]);
+                        if (item.date && item.value !== undefined && item.value !== null) {
+                            const year = parseInt(item.date);
                             if (year) dataObj[year] = item.value;
                         }
                     });
@@ -480,9 +469,9 @@
             updateCharts(labels, chartData, getIndicatorName(indicator), country);
             
             const countryName = document.getElementById('country').selectedOptions[0].text;
-            showError(`⚠️ IMF API에서 데이터를 가져올 수 없어 <strong>샘플 데이터</strong>를 표시합니다.<br>
-                      <small>IMF API가 외부 호출을 제한하거나, Netlify Functions의 아웃바운드 연결이 제한되었을 수 있습니다.<br>
-                      실제 데이터를 사용하려면 IMF API 접근 권한이 필요하거나, 다른 공개 경제 데이터 API를 사용해야 합니다.</small>`);
+            showError(`⚠️ World Bank API에서 데이터를 가져올 수 없어 <strong>샘플 데이터</strong>를 표시합니다.<br>
+                      <small>World Bank API가 일시적으로 사용 불가능하거나, 네트워크 문제가 있을 수 있습니다.<br>
+                      잠시 후 다시 시도해보세요.</small>`);
         }
 
         function updateCharts(labels, data, indicatorName, country) {
