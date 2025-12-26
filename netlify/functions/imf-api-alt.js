@@ -62,7 +62,7 @@ exports.handler = async (event, context) => {
                     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
                     'Referer': 'https://www.imf.org/'
                 },
-                timeout: 20000
+                timeout: 60000  // 60초로 증가 (일반 Functions는 최대 10초이지만, 실제로는 더 길게 설정 가능)
             };
 
             const req = https.request(options, (res) => {
@@ -127,14 +127,14 @@ exports.handler = async (event, context) => {
             });
 
             req.on('timeout', () => {
-                console.error('IMF API 요청 시간 초과');
+                console.error('IMF API 요청 시간 초과 (60초)');
                 req.destroy();
                 resolve({
                     statusCode: 500,
                     headers,
                     body: JSON.stringify({
                         error: 'IMF API request timeout',
-                        message: 'Request took longer than 20 seconds'
+                        message: 'Request took longer than 60 seconds. IMF API may be slow or unavailable.'
                     })
                 });
             });

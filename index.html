@@ -256,9 +256,9 @@
                 
                 console.log('Function URL:', functionUrl);
                 
-                // 타임아웃 설정 (30초)
+                // 타임아웃 설정 (65초 - 서버 타임아웃 60초보다 약간 길게)
                 const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 30000);
+                const timeoutId = setTimeout(() => controller.abort(), 65000);
                 
                 let response;
                 try {
@@ -269,7 +269,7 @@
                 } catch (fetchError) {
                     clearTimeout(timeoutId);
                     if (fetchError.name === 'AbortError') {
-                        throw new Error('요청 시간이 초과되었습니다 (30초). Netlify Functions가 배포되었는지 확인하세요.');
+                        throw new Error('요청 시간이 초과되었습니다 (65초). IMF API가 느리게 응답하고 있을 수 있습니다.');
                     }
                     throw new Error(`네트워크 오류: ${fetchError.message}. Netlify Functions가 제대로 배포되었는지 확인하세요.`);
                 }
