@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IMF 경제 통계 대시보드</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            padding: 30px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .control-group {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-weight: 600;
+        }
+
+        select, input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        select:focus, input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            align-self: flex-end;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .charts-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 30px;
+            margin-top: 30px;
+        }
+
+        .chart-wrapper {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .chart-title {
+            font-size: 1.3em;
+            color: #333;
+            margin-bottom: 15px;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            font-size: 1.2em;
+        }
+
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            border-left: 4px solid #c33;
+        }
+
+        .info-box {
+            background: #e7f3ff;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border-left: 4px solid #2196F3;
+        }
+
+        @media (max-width: 768px) {
+            .charts-container {
+                grid-template-columns: 1fr;
+            }
+            
+            h1 {
+                font-size: 1.8em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌍 IMF 경제 통계 대시보드</h1>
+        <p class="subtitle">각국의 주요 경제 지표를 비교하고 시각화합니다</p>
+
+        <div class="info-box">
+            <strong>사용 방법:</strong> 국가와 지표를 선택한 후 "데이터 불러오기" 버튼을 클릭하세요. 
+            IMF Data Portal API를 통해 최신 경제 통계 데이터를 가져옵니다.
+        </div>
+
+        <div class="controls">
+            <div class="control-group">
+                <label for="country">국가 선택:</label>
+                <select id="country">
+                    <option value="US">미국 (United States)</option>
+                    <option value="CN">중국 (China)</option>
+                    <option value="JP">일본 (Japan)</option>
+                    <option value="DE">독일 (Germany)</option>
+                    <option value="GB">영국 (United Kingdom)</option>
+                    <option value="FR">프랑스 (France)</option>
+                    <option value="KR">한국 (Korea)</option>
+                    <option value="IN">인도 (India)</option>
+                    <option value="BR">브라질 (Brazil)</option>
+                    <option value="RU">러시아 (Russia)</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label for="indicator">경제 지표 선택:</label>
+                <select id="indicator">
+                    <option value="NGDP_RPCH">GDP 성장률 (연간 %)</option>
+                    <option value="PCPIPCH">인플레이션율 (연간 %)</option>
+                    <option value="LUR">실업률 (%)</option>
+                    <option value="NGDPD">GDP (현재 가격, USD)</option>
+                    <option value="BCA">경상수지 (GDP 대비 %)</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label for="startYear">시작 연도:</label>
+                <input type="number" id="startYear" value="2015" min="1980" max="2024">
+            </div>
+            <div class="control-group">
+                <label for="endYear">종료 연도:</label>
+                <input type="number" id="endYear" value="2024" min="1980" max="2024">
+            </div>
+            <div class="control-group">
+                <button id="loadData" onclick="loadIMFData()">데이터 불러오기</button>
+            </div>
+        </div>
+
+        <div id="errorMessage"></div>
+        <div id="loadingMessage" class="loading" style="display: none;">데이터를 불러오는 중...</div>
+        
+        <div class="charts-container" id="chartsContainer">
+            <div class="chart-wrapper">
+                <div class="chart-title">선 그래프</div>
+                <canvas id="lineChart"></canvas>
+            </div>
+            <div class="chart-wrapper">
+                <div class="chart-title">막대 그래프</div>
+                <canvas id="barChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let lineChartInstance = null;
+        let barChartInstance = null;
+
+        // IMF Data Portal API를 사용하여 데이터 가져오기
+        async function loadIMFData() {
+            const country = document.getElementById('country').value;
+            const indicator = document.getElementById('indicator').value;
+            const startYear = document.getElementById('startYear').value;
+            const endYear = document.getElementById('endYear').value;
+
+            // 입력 검증
+            if (parseInt(startYear) > parseInt(endYear)) {
+                showError('시작 연도는 종료 연도보다 작아야 합니다.');
+                return;
+            }
+
+            document.getElementById('loadingMessage').style.display = 'block';
+            document.getElementById('errorMessage').innerHTML = '';
+            document.getElementById('loadData').disabled = true;
+
+            try {
+                // IMF Data Portal API 엔드포인트
+                // 참고: 실제 API는 CORS 제한이 있을 수 있으므로, 프록시나 서버를 통해 접근해야 할 수 있습니다.
+                const apiUrl = `https://www.imf.org/external/datamapper/api/v1/${indicator}/${country}?periods=${startYear}-${endYear}`;
+                
+                // CORS 문제를 우회하기 위해 CORS 프록시 사용 (개발용)
+                const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(apiUrl)}`;
+                
+                const response = await fetch(proxyUrl);
+                const data = await response.json();
+                
+                // 프록시 응답 파싱
+                let imfData;
+                try {
+                    const parsedContent = JSON.parse(data.contents);
+                    imfData = parsedContent;
+                } catch (e) {
+                    // 직접 접근 시도
+                    const directResponse = await fetch(apiUrl);
+                    imfData = await directResponse.json();
+                }
+
+                // 데이터 처리
+                processData(imfData, country, indicator);
+                
+            } catch (error) {
+                console.error('데이터 로딩 오류:', error);
+                showError('데이터를 불러오는 중 오류가 발생했습니다. IMF API에 직접 접근할 수 없을 수 있습니다. 브라우저 콘솔을 확인하세요.');
+                
+                // 샘플 데이터로 데모 표시
+                showSampleData(country, indicator, startYear, endYear);
+            } finally {
+                document.getElementById('loadingMessage').style.display = 'none';
+                document.getElementById('loadData').disabled = false;
+            }
+        }
+
+        function processData(data, country, indicator) {
+            try {
+                // IMF API 응답 구조에 따라 데이터 추출
+                const values = data.values || data[country] || {};
+                const periods = data.periods || [];
+                
+                const labels = [];
+                const chartData = [];
+
+                // 연도별 데이터 추출
+                for (let year = parseInt(document.getElementById('startYear').value); 
+                     year <= parseInt(document.getElementById('endYear').value); 
+                     year++) {
+                    labels.push(year.toString());
+                    
+                    // 데이터가 있는 경우 해당 값 사용, 없으면 null
+                    const value = values[year] || values[year.toString()] || null;
+                    chartData.push(value);
+                }
+
+                // 차트 업데이트
+                updateCharts(labels, chartData, getIndicatorName(indicator), country);
+                
+            } catch (error) {
+                console.error('데이터 처리 오류:', error);
+                showError('데이터를 처리하는 중 오류가 발생했습니다.');
+                showSampleData(country, indicator, 
+                    document.getElementById('startYear').value, 
+                    document.getElementById('endYear').value);
+            }
+        }
+
+        function showSampleData(country, indicator, startYear, endYear) {
+            // 샘플 데이터 생성 (API 접근 실패 시 데모용)
+            const labels = [];
+            const chartData = [];
+            
+            for (let year = parseInt(startYear); year <= parseInt(endYear); year++) {
+                labels.push(year.toString());
+                // 랜덤 샘플 데이터 생성
+                chartData.push((Math.random() * 10 - 2).toFixed(2));
+            }
+
+            updateCharts(labels, chartData, getIndicatorName(indicator), country);
+            
+            showError('⚠️ 실제 IMF API에 접근할 수 없어 샘플 데이터를 표시합니다. 실제 배포 시에는 서버 사이드에서 API를 호출하거나 CORS 프록시를 설정해야 합니다.');
+        }
+
+        function updateCharts(labels, data, indicatorName, country) {
+            const countryName = document.getElementById('country').selectedOptions[0].text;
+            
+            // 선 그래프
+            const lineCtx = document.getElementById('lineChart').getContext('2d');
+            if (lineChartInstance) {
+                lineChartInstance.destroy();
+            }
+            lineChartInstance = new Chart(lineCtx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: `${countryName} - ${indicatorName}`,
+                        data: data,
+                        borderColor: 'rgb(102, 126, 234)',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 5,
+                        pointHoverRadius: 7
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            title: {
+                                display: true,
+                                text: indicatorName
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: '연도'
+                            }
+                        }
+                    }
+                }
+            });
+
+            // 막대 그래프
+            const barCtx = document.getElementById('barChart').getContext('2d');
+            if (barChartInstance) {
+                barChartInstance.destroy();
+            }
+            barChartInstance = new Chart(barCtx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: `${countryName} - ${indicatorName}`,
+                        data: data,
+                        backgroundColor: 'rgba(118, 75, 162, 0.7)',
+                        borderColor: 'rgba(118, 75, 162, 1)',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            title: {
+                                display: true,
+                                text: indicatorName
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: '연도'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function getIndicatorName(code) {
+            const names = {
+                'NGDP_RPCH': 'GDP 성장률 (%)',
+                'PCPIPCH': '인플레이션율 (%)',
+                'LUR': '실업률 (%)',
+                'NGDPD': 'GDP (USD)',
+                'BCA': '경상수지 (GDP 대비 %)'
+            };
+            return names[code] || code;
+        }
+
+        function showError(message) {
+            document.getElementById('errorMessage').innerHTML = `<div class="error">${message}</div>`;
+        }
+
+        // 페이지 로드 시 초기 데이터 로드
+        window.addEventListener('load', () => {
+            // 초기 로드는 하지 않고 사용자가 버튼을 클릭하도록 함
+        });
+    </script>
+</body>
+</html>
+
