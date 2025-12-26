@@ -285,11 +285,20 @@
                     }
                     
                     const errorMessage = errorData.error || errorData.message || `HTTP 오류: ${response.status} ${response.statusText}`;
+                    const errorDetails = errorData.details || errorData.name || '';
                     console.error('API 오류:', errorMessage, errorData);
+                    console.error('에러 상세:', errorDetails);
                     
                     if (response.status === 404) {
                         throw new Error('Netlify Function을 찾을 수 없습니다. Functions가 배포되었는지 확인하세요.');
                     }
+                    
+                    // 500 오류인 경우 더 자세한 정보 제공
+                    if (response.status === 500) {
+                        const detailedError = `${errorMessage}${errorDetails ? '\n상세: ' + errorDetails.substring(0, 200) : ''}`;
+                        throw new Error(detailedError);
+                    }
+                    
                     throw new Error(errorMessage);
                 }
                 

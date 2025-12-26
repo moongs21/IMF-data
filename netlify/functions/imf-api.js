@@ -2,6 +2,12 @@
 // This function runs server-side, avoiding CORS issues
 
 exports.handler = async (event, context) => {
+    // 초기 로그
+    console.log('Function 호출됨:', {
+        method: event.httpMethod,
+        path: event.path,
+        queryString: event.queryStringParameters
+    });
     // CORS 헤더 설정
     const headers = {
         'Access-Control-Allow-Origin': '*',
@@ -46,28 +52,35 @@ exports.handler = async (event, context) => {
         // IMF API URL 구성
         const imfApiUrl = `https://www.imf.org/external/datamapper/api/v1/${indicator}/${country}?periods=${startYear}-${endYear}`;
 
-        console.log('IMF API 호출:', imfApiUrl);
+        console.log('IMF API 호출 시작:', imfApiUrl);
+        console.log('파라미터:', { indicator, country, startYear, endYear });
 
-        // IMF API 호출 (타임아웃 25초)
+        // IMF API 호출 (타임아웃 20초로 단축)
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 25000);
+        const timeoutId = setTimeout(() => controller.abort(), 20000);
         
         let response;
         try {
+            console.log('fetch 호출 시작...');
             response = await fetch(imfApiUrl, {
+                method: 'GET',
                 headers: {
                     'Accept': 'application/json',
-                    'User-Agent': 'Mozilla/5.0 (compatible; IMF-Dashboard/1.0)'
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                    'Referer': 'https://www.imf.org/'
                 },
-                signal: controller.signal
+                signal: controller.signal,
+                redirect: 'follow'
             });
             clearTimeout(timeoutId);
+            console.log('fetch 완료, 상태:', response.status);
         } catch (fetchError) {
             clearTimeout(timeoutId);
+            console.error('fetch 오류:', fetchError);
             if (fetchError.name === 'AbortError') {
-                throw new Error('IMF API 호출 시간 초과');
+                throw new Error('IMF API 호출 시간 초과 (20초)');
             }
-            throw new Error(`IMF API 네트워크 오류: ${fetchError.message}`);
+            throw new Error(`IMF API 네트워크 오류: ${fetchError.message} (${fetchError.name})`);
         }
 
         console.log('IMF API 응답 상태:', response.status, response.statusText);
@@ -100,13 +113,18 @@ exports.handler = async (event, context) => {
 
     } catch (error) {
         console.error('IMF API Proxy Error:', error);
+        console.error('Error stack:', error.stack);
+        console.error('Error name:', error.name);
         
+        // 더 자세한 에러 정보 반환
         return {
             statusCode: 500,
             headers,
             body: JSON.stringify({ 
                 error: 'Failed to fetch data from IMF API',
-                message: error.message 
+                message: error.message,
+                details: error.stack || error.toString(),
+                name: error.name
             })
         };
     }
