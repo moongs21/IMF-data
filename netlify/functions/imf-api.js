@@ -48,24 +48,48 @@ exports.handler = async (event, context) => {
 
         console.log('IMF API 호출:', imfApiUrl);
 
-        // IMF API 호출
-        const response = await fetch(imfApiUrl, {
-            headers: {
-                'Accept': 'application/json',
-                'User-Agent': 'Mozilla/5.0 (compatible; IMF-Dashboard/1.0)'
+        // IMF API 호출 (타임아웃 25초)
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 25000);
+        
+        let response;
+        try {
+            response = await fetch(imfApiUrl, {
+                headers: {
+                    'Accept': 'application/json',
+                    'User-Agent': 'Mozilla/5.0 (compatible; IMF-Dashboard/1.0)'
+                },
+                signal: controller.signal
+            });
+            clearTimeout(timeoutId);
+        } catch (fetchError) {
+            clearTimeout(timeoutId);
+            if (fetchError.name === 'AbortError') {
+                throw new Error('IMF API 호출 시간 초과');
             }
-        });
+            throw new Error(`IMF API 네트워크 오류: ${fetchError.message}`);
+        }
 
         console.log('IMF API 응답 상태:', response.status, response.statusText);
 
         if (!response.ok) {
-            const errorText = await response.text();
+            let errorText = '';
+            try {
+                errorText = await response.text();
+            } catch (e) {
+                errorText = '응답 본문을 읽을 수 없습니다';
+            }
             console.error('IMF API 오류 응답:', errorText);
             throw new Error(`IMF API error: ${response.status} ${response.statusText}. ${errorText.substring(0, 200)}`);
         }
 
-        const data = await response.json();
-        console.log('IMF API 데이터:', JSON.stringify(data).substring(0, 500));
+        let data;
+        try {
+            data = await response.json();
+            console.log('IMF API 데이터 수신 성공');
+        } catch (parseError) {
+            throw new Error(`IMF API 응답 파싱 오류: ${parseError.message}`);
+        }
 
         // 성공 응답 반환
         return {
