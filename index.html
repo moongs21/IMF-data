@@ -228,12 +228,89 @@
         }
 
         @media (max-width: 768px) {
+            body {
+                padding: 5px;
+                justify-content: flex-start;
+                align-items: stretch;
+            }
+
+            .container {
+                padding: 15px;
+                margin: 0;
+                border-radius: 10px;
+            }
+
+            h1 {
+                font-size: 1.5em;
+                margin-bottom: 5px;
+            }
+
+            .subtitle {
+                font-size: 0.85em;
+                margin-bottom: 10px;
+            }
+
+            .info-box {
+                padding: 8px;
+                font-size: 0.85em;
+                margin-bottom: 10px;
+            }
+
+            .controls {
+                padding: 10px;
+                gap: 10px;
+                margin-bottom: 10px;
+            }
+
+            .control-group {
+                min-width: 100%;
+            }
+
+            .control-group.button-group {
+                padding-left: 0;
+                justify-content: stretch;
+            }
+
+            button {
+                width: 100%;
+                padding: 10px 20px;
+                font-size: 14px;
+            }
+
             .charts-container {
                 grid-template-columns: 1fr;
+                gap: 12px;
+                margin-top: 10px;
             }
-            
-            h1 {
-                font-size: 1.8em;
+
+            .chart-wrapper {
+                padding: 12px;
+                min-height: 280px;
+                max-height: 280px;
+                overflow: hidden;
+            }
+
+            .chart-wrapper canvas {
+                max-height: 240px;
+            }
+
+            .chart-title {
+                font-size: 0.95em;
+                margin-bottom: 6px;
+            }
+
+            #dataTable {
+                max-height: 280px;
+                min-height: 280px;
+            }
+
+            table {
+                font-size: 12px;
+            }
+
+            table th,
+            table td {
+                padding: 8px 10px;
             }
         }
     </style>
@@ -579,7 +656,7 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: true,
-                    aspectRatio: 2,
+                    aspectRatio: window.innerWidth <= 768 ? 1.5 : 2,
                     plugins: {
                         legend: {
                             display: true,
@@ -642,6 +719,26 @@
         function showError(message) {
             document.getElementById('errorMessage').innerHTML = `<div class="error">${message}</div>`;
         }
+
+        // 화면 회전 및 리사이즈 시 차트 업데이트
+        let resizeTimer;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => {
+                if (lineChartInstance) {
+                    lineChartInstance.resize();
+                }
+            }, 250);
+        });
+
+        // 화면 회전 감지 및 차트 업데이트
+        window.addEventListener('orientationchange', () => {
+            setTimeout(() => {
+                if (lineChartInstance) {
+                    lineChartInstance.resize();
+                }
+            }, 100);
+        });
 
         // 페이지 로드 시 초기 데이터 로드
         window.addEventListener('load', () => {
