@@ -102,3 +102,5 @@ https://www.imf.org/external/datamapper/api/v1/LUR/KR?periods=2015-2024
 - [FRED API 문서](https://fred.stlouisfed.org/docs/api/)
 - [IMF Data Portal](https://www.imf.org/external/datamapper/)
 
+
+

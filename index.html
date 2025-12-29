@@ -16,7 +16,11 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
-            padding: 20px;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
         }
 
         .container {
@@ -25,29 +29,29 @@
             background: white;
             border-radius: 15px;
             box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-            padding: 30px;
+            padding: 20px;
         }
 
         h1 {
             text-align: center;
             color: #333;
-            margin-bottom: 10px;
-            font-size: 2.5em;
+            margin-bottom: 5px;
+            font-size: 2em;
         }
 
         .subtitle {
             text-align: center;
             color: #666;
-            margin-bottom: 30px;
-            font-size: 1.1em;
+            margin-bottom: 15px;
+            font-size: 0.95em;
         }
 
         .controls {
             display: flex;
             flex-wrap: wrap;
-            gap: 15px;
-            margin-bottom: 30px;
-            padding: 20px;
+            gap: 12px;
+            margin-bottom: 15px;
+            padding: 15px;
             background: #f8f9fa;
             border-radius: 10px;
         }
@@ -118,8 +122,8 @@
         .charts-container {
             display: grid;
             grid-template-columns: 2fr 1fr;
-            gap: 30px;
-            margin-top: 30px;
+            gap: 20px;
+            margin-top: 15px;
         }
 
         @media (max-width: 1024px) {
@@ -130,14 +134,22 @@
 
         .chart-wrapper {
             background: white;
-            padding: 20px;
+            padding: 15px;
             border-radius: 10px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            min-height: 450px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chart-wrapper canvas {
+            flex: 1;
+            min-height: 400px;
         }
 
         #dataTable {
             overflow-x: auto;
-            max-height: 500px;
+            max-height: 400px;
             overflow-y: auto;
         }
 
@@ -183,9 +195,9 @@
         }
 
         .chart-title {
-            font-size: 1.3em;
+            font-size: 1.1em;
             color: #333;
-            margin-bottom: 15px;
+            margin-bottom: 10px;
             text-align: center;
             font-weight: 600;
         }
@@ -208,10 +220,11 @@
 
         .info-box {
             background: #e7f3ff;
-            padding: 15px;
+            padding: 10px;
             border-radius: 5px;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
             border-left: 4px solid #2196F3;
+            font-size: 0.9em;
         }
 
         @media (max-width: 768px) {
@@ -239,13 +252,13 @@
             <div class="control-group">
                 <label for="country">국가 선택:</label>
                 <select id="country">
+                    <option value="KR">한국 (Korea)</option>
                     <option value="US">미국 (United States)</option>
                     <option value="CN">중국 (China)</option>
                     <option value="JP">일본 (Japan)</option>
                     <option value="DE">독일 (Germany)</option>
                     <option value="GB">영국 (United Kingdom)</option>
                     <option value="FR">프랑스 (France)</option>
-                    <option value="KR">한국 (Korea)</option>
                     <option value="IN">인도 (India)</option>
                     <option value="BR">브라질 (Brazil)</option>
                     <option value="RU">러시아 (Russia)</option>
@@ -260,7 +273,10 @@
                     <option value="PCPIPCH">인플레이션율 (연간 %)</option>
                     <option value="LUR">실업률 (%)</option>
                     <option value="NGDPD">GDP (현재 가격, USD)</option>
+                    <option value="GDP_PCAP">1인당 GDP (USD)</option>
                     <option value="BCA">경상수지 (GDP 대비 %)</option>
+                    <option value="MIN_WAGE">최저 임금 (USD)</option>
+                    <option value="MANUF_WAGE">제조업 평균 임금 (USD)</option>
                 </select>
             </div>
             <div class="control-group">
@@ -512,7 +528,10 @@
                 'PCPIPCH': { min: 0, max: 5 },         // 인플레이션율: 0% ~ 5%
                 'LUR': { min: 2, max: 12 },            // 실업률: 2% ~ 12%
                 'NGDPD': { min: 1000000, max: 50000000 }, // GDP: 1조 ~ 50조
-                'BCA': { min: -5, max: 5 }             // 경상수지: -5% ~ 5%
+                'GDP_PCAP': { min: 1000, max: 80000 }, // 1인당 GDP: 1,000 ~ 80,000 USD
+                'BCA': { min: -5, max: 5 },            // 경상수지: -5% ~ 5%
+                'MIN_WAGE': { min: 500, max: 3000 },   // 최저 임금: 500 ~ 3000 USD
+                'MANUF_WAGE': { min: 1000, max: 5000 } // 제조업 평균 임금: 1000 ~ 5000 USD
             };
             
             const range = sampleRanges[indicator] || { min: -2, max: 10 };
@@ -564,6 +583,7 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: true,
+                    aspectRatio: 2,
                     plugins: {
                         legend: {
                             display: true,
@@ -617,7 +637,10 @@
                 'PCPIPCH': '인플레이션율 (%)',
                 'LUR': '실업률 (%)',
                 'NGDPD': 'GDP (USD)',
-                'BCA': '경상수지 (GDP 대비 %)'
+                'GDP_PCAP': '1인당 GDP (USD)',
+                'BCA': '경상수지 (GDP 대비 %)',
+                'MIN_WAGE': '최저 임금 (USD)',
+                'MANUF_WAGE': '제조업 평균 임금 (USD)'
             };
             return names[code] || code;
         }

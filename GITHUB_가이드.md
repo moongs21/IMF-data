@@ -147,3 +147,5 @@ git push
 ### "Permission denied" 오류
 → GitHub 인증을 확인하세요 (Personal Access Token 사용)
 
+
+
